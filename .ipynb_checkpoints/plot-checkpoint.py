@@ -69,9 +69,26 @@ def figure3(x_train: np.ndarray, y_train: np.ndarray, b: np.ndarray, w: np.ndarr
 
     fig.tight_layout()
 
+
 def figure4(x_train: np.ndarray, y_train: np.ndarray, b, w, bs, ws, all_losses):
     figure = plt.figure(figsize=(12,6))
 
     ax1 = figure.add_subplot(1,2,1, projection='3d')
     ax1.set_xlabel('b')
     ax1.set_ylabel('w')
+    ax1.set_title('Loss surface')
+    surf = ax1.plot_surface(
+        bs,
+        ws,
+        all_losses,
+        alpha=0.5,
+        cmap=plt.cm.jet,
+        rstride=1,
+        cstride=1,
+        linewidth=0,
+        antialiased=True
+    )
+    ax1.contour(bs[0,:], ws[:,0], all_losses, 10, offset=-1, cmap=plt.cm.jet)
+
+    b_minimum, w_minimum = fit_model(x_train, y_train)
+    find_index(b_minimum, w_minimum, bs, ws)

@@ -6,11 +6,11 @@ from matplotlib.figure import Figure
 from sklearn.linear_model import LinearRegression
 
 
-def fit_model(x_train: np.ndarray, y_train: np.ndarray):
-    regression = LinearRegression()
-    regression.fit(x_train, y_train)
-    b_minimum, w_minimum = regression.intercept_[0], regression.coef_[0][0]
-    return b_minimum, w_minimum
+# def fit_model(x_train: np.ndarray, y_train: np.ndarray):
+#     regression = LinearRegression()
+#     regression.fit(x_train, y_train)
+#     b_minimum, w_minimum = regression.intercept_[0], regression.coef_[0][0]
+#     return b_minimum, w_minimum
 
 
 def find_index(b, w, bs: np.ndarray, ws: np.ndarray):
@@ -69,9 +69,26 @@ def figure3(x_train: np.ndarray, y_train: np.ndarray, b: np.ndarray, w: np.ndarr
 
     fig.tight_layout()
 
+
 def figure4(x_train: np.ndarray, y_train: np.ndarray, b, w, bs, ws, all_losses):
     figure = plt.figure(figsize=(12,6))
 
     ax1 = figure.add_subplot(1,2,1, projection='3d')
     ax1.set_xlabel('b')
     ax1.set_ylabel('w')
+    ax1.set_title('Loss surface')
+    surf = ax1.plot_surface(
+        bs,
+        ws,
+        all_losses,
+        alpha=0.5,
+        cmap=plt.cm.jet,
+        rstride=1,
+        cstride=1,
+        linewidth=0,
+        antialiased=True
+    )
+    ax1.contour(bs[0,:], ws[:,0], all_losses, 10, offset=-1, cmap=plt.cm.jet)
+
+    b_minimum_idx, w_minimum_idx, _, _ =  find_index(1, 2, bs, ws)
+    ax1.scatter(1, 2, all_losses[w_minimum_idx, b_minimum_idx ])
