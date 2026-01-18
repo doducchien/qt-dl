@@ -203,9 +203,7 @@ def calc_gradient(param_before, param_after, loss_before, loss_after):
     manual_grad = delta_loss/delta_param
 
     return delta_param, delta_loss, manual_grad
-
-
-
+4
 def figure8(b, w, b_after, w_after, bs: np.ndarray, ws: np.ndarray, all_losses: np.ndarray):
     bidx_before, widx_before, fixedb_before, fixedw_before =  find_index(b,w,bs,ws)
     bidx_after, widx_after, fixedb_after, fixedw_after = find_index(b_after, w_after, bs, ws)
