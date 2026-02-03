@@ -1,4 +1,6 @@
 import os.path
+
+import torch
 import torchvision.transforms as transforms
 
 import pandas as pd
