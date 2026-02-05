@@ -1,5 +1,7 @@
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
+
 
 
 
@@ -33,15 +35,18 @@ class Down(nn.Module):
 class Up(nn.Module):
     def __init__(self, in_channels:int, out_channels:int):
         super().__init__()
-        self.seq = nn.Sequential(
-            nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels, kernel_size=2, stride=2),
-            DoubleConv(in_channels=in_channels, out_channels=out_channels)
-        )
+        self.trans_conv = nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels, kernel_size=2, stride=2)
+        self.double_conv = DoubleConv(in_channels=in_channels, out_channels=out_channels)
 
     def forward(self, x_encoder:torch.Tensor, x:torch.Tensor):
-        print(x_encoder.shape, x.shape)
+        x = self.trans_conv(x)
+        diff_x, diff_y = 0, 0
+        diff_x = x_encoder.shape[3] - x.shape[3]
+        diff_y = x_encoder.shape[2] - x.shape[2]
+        x = F.pad(x, [diff_x//2, diff_x - diff_x//2, diff_y//2, diff_y - diff_y//2])
+      
         new_x = torch.concat((x_encoder, x), dim=1)
-        return self.seq(new_x)
+        return self.double_conv(new_x)
 
 class OutConv(nn.Module):
     def __init__(self, in_channels:int, out_channels:int):
