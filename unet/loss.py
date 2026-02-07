@@ -4,8 +4,11 @@ import torch.nn.functional as F
 
 #Hàm loss hỗn hợp của BCE và Dice
 class BceDiceLoss(nn.Module):
-    def __init__(self, input:torch.Tensor, target:torch.Tensor) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self) -> None:
+        super().__init__()
+
+
+    def forward(self, input:torch.Tensor, target:torch.Tensor):
         #Tính BCE loss trước
         bce_loss = F.binary_cross_entropy_with_logits(
             input=input, 

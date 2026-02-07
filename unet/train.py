@@ -1,3 +1,5 @@
+from typing import Any
+from numpy import random
 import torch
 from data import P3MDataset
 from torch.utils.data import DataLoader, Dataset, random_split
@@ -8,34 +10,34 @@ from loss import BceDiceLoss
 import torch.optim as optim
 from UNET import UNET
 from torch.utils.tensorboard import SummaryWriter
-
+from utils import get_random_test_images, un_normalize, visualize
 if __name__ == '__main__':
     input_path = Path('P3M-500-NP/original_image')
     label_path = Path('P3M-500-NP/mask')
-    BATCH_SIZE = 16
+    BATCH_SIZE = 4
 
     writer = SummaryWriter(log_dir='runs/unet_experiment_1')
 
     train_transform = v2.Compose([
-        v2.Resize((1024, 1024)),
-        v2.RandomCrop((768, 768)),
+        v2.Resize((512, 512)),
+        # v2.RandomCrop((312, 312)),
         v2.RandomHorizontalFlip(p=0.5),
         v2.RandomRotation(degrees=10),
+        v2.ToImage(),
         v2.ToDtype(torch.float32, scale=True),
-        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        # v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
     test_transform = v2.Compose([
-        v2.Resize((1024, 1024)),
+        v2.Resize((512, 512)),
         v2.ToDtype(torch.float32, scale=True),
         v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-
-
     full_dataset = P3MDataset(
         input_path=input_path,
-        label_path=label_path
+        label_path=label_path,
+        transform=train_transform
     )
 
     total_size = len(full_dataset)
@@ -48,7 +50,7 @@ if __name__ == '__main__':
         dataset=train_dataset,
         shuffle=True,
         batch_size=BATCH_SIZE,
-        num_workers=4,
+        num_workers=2,
     )
     test_loader = DataLoader(
         dataset=test_dataset,
@@ -63,7 +65,7 @@ if __name__ == '__main__':
 
 
     EPOCH = 200
-    loss_fn = BceDiceLoss
+    loss_fn = BceDiceLoss()
     optimizer = optim.RMSprop(params=model.parameters(), lr=1e-4, momentum=0.9)
 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
@@ -72,24 +74,36 @@ if __name__ == '__main__':
         patience=2, 
     )
 
-    epoch_tqdm = tqdm(range(EPOCH), unit='batch')
     global_step = 0
-    for epoch in epoch_tqdm:
+    for epoch in range(EPOCH):
         epoch_loss = 0
-        epoch_tqdm.set_description(f'epoch {epoch}/{EPOCH}')
-        for inputs, labels in tqdm(train_loader):
+        nums_item = 0
+        train_loader_tqdm = tqdm(enumerate(train_loader), total=len(train_loader), unit='batch', desc=f"Epoch {epoch + 1}")
+        for i, (inputs, labels) in train_loader_tqdm:
+            model.train()
             inputs = inputs.to(device)
             labels = labels.to(device)
 
             optimizer.zero_grad(set_to_none=True)
+
             preds = model(inputs)
-            loss = loss_fn(inputs, preds)
+            loss = loss_fn(preds, labels)
 
             loss.backward()
             optimizer.step()
-            optimizer.update()
-            epoch_tqdm.set_postfix(**{'loss (batch)': loss.item()})
+                
+            train_loader_tqdm.set_postfix(**{'train_loss': loss.item()})
+            epoch_loss += loss.item()
+            nums_item += 1
+            writer.add_scalar('Loss/train', loss.item(), global_step=global_step)
+            if global_step > 0 and global_step % 5 == 0:
+                visualize(model=model, data_loader=test_loader, device=device, num_images=4, writer=writer, step=global_step)
             global_step += 1
 
-            writer.add_scalar('Loss/train', loss.item(), global_step=global_step)
+        print(f"Epoch {epoch + 1}: train loss: {epoch_loss/nums_item}")
+        model.eval()
+
+
+    writer.close()    
+
                 
