@@ -20,11 +20,11 @@ class BceDiceLoss(nn.Module):
 
         ## Đầu tiên tính dice score trước
         ### Duỗi thẳng về vector B*C*H*W
-        input_flat = input.reshape(-1)
+        input_flat = torch.sigmoid(input).reshape(-1)
         target_flat = target.reshape(-1)
 
         ### tính phần giao nhau mềm
-        interection = (input * target).sum()
+        interection = (input_flat * target_flat).sum()
         ## dice_loss = 1 - 2*intersection / (tổng x + y)
         dice_loss = 1 -( 2 * interection) / (input_flat.sum() + target_flat.sum() + 1e-5)
 

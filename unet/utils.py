@@ -49,6 +49,7 @@ def visualize(
     mask_rgb = masks.repeat(1,3,1,1)
     preds_rgb = preds.repeat(1,3,1,1)
 
-    combined_tensor = torch.concat([images, mask_rgb, preds_rgb])
-    grid_image = torchvision.utils.make_grid(combined_tensor, nrow=3, ncol=4, padding=2, normalize=False)
+    combined = torch.stack([images, mask_rgb, preds_rgb], dim=1)
+    combined_tensor = combined.flatten(0, 1)
+    grid_image = torchvision.utils.make_grid(combined_tensor, nrow=3, padding=2, normalize=False)
     writer.add_image("Visualize input/predict", grid_image, step)

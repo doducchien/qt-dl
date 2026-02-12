@@ -28,11 +28,11 @@ if __name__ == '__main__':
         # v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-    test_transform = v2.Compose([
-        v2.Resize((512, 512)),
-        v2.ToDtype(torch.float32, scale=True),
-        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
+    # test_transform = v2.Compose([
+    #     v2.Resize((512, 512)),
+    #     v2.ToDtype(torch.float32, scale=True),
+    #     v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    # ])
 
     full_dataset = P3MDataset(
         input_path=input_path,
@@ -71,6 +71,7 @@ if __name__ == '__main__':
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer=optimizer, 
         mode='min',
+        factor=0.1,
         patience=2, 
     )
 
@@ -90,17 +91,19 @@ if __name__ == '__main__':
             loss = loss_fn(preds, labels)
 
             loss.backward()
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
                 
             train_loader_tqdm.set_postfix(**{'train_loss': loss.item()})
             epoch_loss += loss.item()
             nums_item += 1
             writer.add_scalar('Loss/train', loss.item(), global_step=global_step)
-            if global_step > 0 and global_step % 5 == 0:
+            if global_step > 0 and global_step % 20 == 0:
                 visualize(model=model, data_loader=test_loader, device=device, num_images=4, writer=writer, step=global_step)
             global_step += 1
-
-        print(f"Epoch {epoch + 1}: train loss: {epoch_loss/nums_item}")
+        avg_train_loss = epoch_loss/nums_item
+        print(f"Epoch {epoch + 1}: train loss: {avg_train_loss}")
+        scheduler.step(avg_train_loss)
         model.eval()
 
 

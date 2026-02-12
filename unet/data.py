@@ -27,8 +27,7 @@ class P3MDataset(Dataset):
         image = Image.open(input_path).convert('RGB')
         label = Image.open(label_path).convert('L')
         if self.transform:
-            image = self.transform(image)
-            label = self.transform(label)
+            image, label = self.transform(image, label)
         image = self.normalize(image)
         return image, label
 
